@@ -1,0 +1,52 @@
+- type: Database
+  id: DB-FindUserByPhone
+  description: 根据手机号查询用户是否已注册。
+  dependencies:
+    - none
+  acceptanceCriteria:
+    - 如果手机号存在于users表中，返回用户信息。
+    - 如果手机号不存在，返回空结果。
+    - 查询应该是高效的，建议在phone字段上建立索引。
+  changeLog:
+    - date: "2025-10-13"
+      description: "初始创建。"
+
+- type: Database
+  id: DB-SaveVerificationCode
+  description: 保存手机号对应的验证码到数据库，设置60秒有效期。
+  dependencies:
+    - none
+  acceptanceCriteria:
+    - 成功执行后，verification_codes表中会增加一条新记录。
+    - 记录包含手机号、验证码、创建时间和过期时间。
+    - 如果同一手机号已有未过期的验证码，应更新现有记录。
+    - 验证码有效期为60秒。
+  changeLog:
+    - date: "2025-10-13"
+      description: "初始创建。"
+
+- type: Database
+  id: DB-VerifyCode
+  description: 验证手机号和验证码的匹配性及有效性。
+  dependencies:
+    - none
+  acceptanceCriteria:
+    - 检查verification_codes表中是否存在匹配的手机号和验证码。
+    - 验证码必须在有效期内（60秒）。
+    - 验证成功后，应删除或标记该验证码为已使用。
+    - 返回验证结果（成功/失败）。
+  changeLog:
+    - date: "2025-10-13"
+      description: "初始创建。"
+
+- type: Database
+  id: DB-CleanExpiredCodes
+  description: 清理过期的验证码记录。
+  dependencies:
+    - none
+  acceptanceCriteria:
+    - 删除verification_codes表中所有过期的记录。
+    - 可以作为定时任务执行，保持数据库整洁。
+  changeLog:
+    - date: "2025-10-13"
+      description: "初始创建。"
