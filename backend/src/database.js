@@ -25,7 +25,7 @@ class DatabaseManager {
     // 创建用户表
     this.db.run(`
       CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id TEXT PRIMARY KEY,
         phone TEXT UNIQUE NOT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
@@ -121,6 +121,48 @@ class DatabaseManager {
     // TODO: 实现清理过期验证码的逻辑
     const now = new Date().toISOString();
     this.db.run('DELETE FROM verification_codes WHERE expires_at < ?', [now]);
+  }
+
+  // DB-CreateUser: 创建新用户记录
+  async createUser(phone) {
+    // 生成唯一的用户ID (UUID)
+    const userId = this.generateUUID();
+    const createdAt = new Date().toISOString();
+    
+    // 检查手机号是否已存在
+    const existingUser = await this.findUserByPhone(phone);
+    if (existingUser) {
+      throw new Error('Phone number already exists');
+    }
+    
+    // 创建新用户记录
+    try {
+      this.db.run(`
+        INSERT INTO users (id, phone, created_at) 
+        VALUES (?, ?, ?)
+      `, [userId, phone, createdAt]);
+      
+      // 返回新创建用户的信息
+      return {
+        id: userId,
+        phone: phone,
+        created_at: createdAt
+      };
+    } catch (error) {
+      if (error.message.includes('UNIQUE constraint failed')) {
+        throw new Error('Phone number already exists');
+      }
+      throw error;
+    }
+  }
+
+  generateUUID() {
+    // 简单的UUID v4生成器
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
   }
 
   close() {

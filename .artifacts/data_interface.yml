@@ -50,3 +50,17 @@
   changeLog:
     - date: "2025-10-13"
       description: "初始创建。"
+
+- type: Database
+  id: DB-CreateUser
+  description: 在数据库中创建一个新的用户记录。
+  dependencies:
+    - none
+  acceptanceCriteria:
+    - 成功执行后，users表中会增加一条新记录。
+    - 记录包含用户ID（UUID）、手机号、创建时间等基本信息。
+    - 如果手机号已存在，操作应失败并抛出唯一性约束错误。
+    - 返回新创建用户的ID和基本信息。
+  changeLog:
+    - date: "2025-01-20"
+      description: "初始创建，支持用户注册功能。"

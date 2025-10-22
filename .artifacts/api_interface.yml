@@ -61,3 +61,43 @@
   changeLog:
     - date: "2025-10-13"
       description: "初始创建。"
+
+- type: Backend
+  id: API-POST-Register
+  route: POST /api/auth/register
+  description: 处理用户注册请求，包含验证码校验和用户创建。
+  input:
+    type: JSON
+    body:
+      phoneNumber: string
+      verificationCode: string
+      agreeToTerms: boolean
+  output:
+    success:
+      statusCode: 201
+      body: { message: "注册成功", userId: "uuid", token: "jwt" }
+    error:
+      - statusCode: 400
+        body: { error: "请输入正确的手机号码" }
+      - statusCode: 401
+        body: { error: "验证码错误" }
+      - statusCode: 409
+        body: { error: "该手机号已注册，将直接为您登录" }
+      - statusCode: 410
+        body: { error: "验证码已过期" }
+      - statusCode: 422
+        body: { error: "请同意用户协议" }
+  dependencies:
+    - DB-FindUserByPhone
+    - DB-VerifyCode
+    - DB-CreateUser
+  acceptanceCriteria:
+    - 验证手机号格式。
+    - 检查用户是否同意用户协议。
+    - 验证验证码的正确性和有效性。
+    - 检查手机号是否已注册，如已注册则直接登录。
+    - 创建新用户并生成JWT token。
+    - 返回适当的错误信息和状态码。
+  changeLog:
+    - date: "2025-01-20"
+      description: "初始创建，支持用户注册功能。"

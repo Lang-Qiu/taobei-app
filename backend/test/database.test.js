@@ -146,4 +146,77 @@ describe('Database Operations', () => {
       expect(results[0].code).toBe('222222');
     });
   });
+
+  describe('DB-CreateUser', () => {
+    describe('成功创建用户', () => {
+      test('应该成功创建新用户并返回用户信息', async () => {
+        const phone = '13800138000';
+        
+        const result = await database.createUser(phone);
+        
+        expect(result).toBeDefined();
+        expect(result.id).toBeDefined();
+        expect(result.phone).toBe(phone);
+        expect(result.created_at).toBeDefined();
+        
+        // 验证用户确实被创建到数据库中
+        const user = await database.findUserByPhone(phone);
+        expect(user).toBeDefined();
+        expect(user.phone).toBe(phone);
+      });
+
+      test('应该为每个新用户生成唯一的用户ID', async () => {
+        const phone1 = '13800138001';
+        const phone2 = '13800138002';
+        
+        const user1 = await database.createUser(phone1);
+        const user2 = await database.createUser(phone2);
+        
+        expect(user1.id).not.toBe(user2.id);
+        expect(user1.phone).toBe(phone1);
+        expect(user2.phone).toBe(phone2);
+      });
+    });
+
+    describe('处理已存在的手机号', () => {
+      test('当手机号已存在时应该抛出唯一性约束错误', async () => {
+        const phone = '13800138000';
+        
+        // 先创建一个用户
+        await database.createUser(phone);
+        
+        // 尝试用相同手机号再次创建用户
+        await expect(database.createUser(phone)).rejects.toThrow();
+      });
+    });
+
+    describe('返回新创建用户的信息', () => {
+      test('应该返回包含用户ID、手机号和创建时间的完整信息', async () => {
+        const phone = '13800138000';
+        const beforeCreate = new Date();
+        
+        const result = await database.createUser(phone);
+        const afterCreate = new Date();
+        
+        expect(result).toHaveProperty('id');
+        expect(result).toHaveProperty('phone', phone);
+        expect(result).toHaveProperty('created_at');
+        
+        // 验证创建时间在合理范围内
+        const createdAt = new Date(result.created_at);
+        expect(createdAt.getTime()).toBeGreaterThanOrEqual(beforeCreate.getTime());
+        expect(createdAt.getTime()).toBeLessThanOrEqual(afterCreate.getTime());
+      });
+
+      test('应该返回有效的UUID格式的用户ID', async () => {
+        const phone = '13800138000';
+        
+        const result = await database.createUser(phone);
+        
+        // UUID格式验证 (简单版本)
+        expect(typeof result.id).toBe('string');
+        expect(result.id.length).toBeGreaterThan(0);
+      });
+    });
+  });
 });

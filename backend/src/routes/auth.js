@@ -130,4 +130,71 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// 注册接口
+router.post('/register', async (req, res) => {
+  try {
+    const { phone, phoneNumber, code, verificationCode, agreeToTerms } = req.body;
+    const phoneNum = phone || phoneNumber; // 兼容两种字段名
+    const inputCode = code || verificationCode; // 兼容两种字段名
+
+    // 手机号格式校验：必须是11位数字，1开头
+    if (!validatePhoneNumber(phoneNum)) {
+      return res.status(400).json({ error: '请输入正确的手机号码' });
+    }
+
+    // 验证码格式校验：必须是6位数字
+    if (!inputCode || !/^\d{6}$/.test(inputCode)) {
+      return res.status(400).json({ error: '请输入正确的验证码' });
+    }
+
+    // 协议同意校验：agreeToTerms必须为true
+    if (agreeToTerms !== true) {
+      return res.status(400).json({ error: '请同意用户协议和隐私政策' });
+    }
+
+    // 验证验证码
+    const verifyResult = await database.verifyCode(phoneNum, inputCode);
+    
+    if (!verifyResult.valid) {
+      if (verifyResult.reason === 'expired') {
+        return res.status(410).json({ error: '验证码已过期' });
+      } else {
+        return res.status(401).json({ error: '验证码错误' });
+      }
+    }
+
+    // 检查用户是否已存在
+    try {
+      const existingUser = await database.findUserByPhone(phoneNum);
+      if (existingUser) {
+        return res.status(409).json({ error: '该手机号已注册' });
+      }
+    } catch (error) {
+      // findUserByPhone抛出异常表示用户不存在，这是正常情况
+    }
+
+    // 创建新用户
+    const newUser = await database.createUser(phoneNum);
+
+    // 删除验证码（注册成功后清理）
+    await database.db.run('DELETE FROM verification_codes WHERE phone = ?', [phoneNum]);
+
+    // 生成JWT token
+    const token = jwt.sign(
+      { userId: newUser.id, phone: phoneNum },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '7d' }
+    );
+
+    res.status(201).json({
+      message: '注册成功',
+      userId: newUser.id,
+      token
+    });
+  } catch (error) {
+    console.error('注册失败:', error);
+    res.status(500).json({ error: '服务器内部错误' });
+  }
+});
+
 module.exports = router;
