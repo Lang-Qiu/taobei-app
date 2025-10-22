@@ -1,0 +1,20 @@
+课程作业提交链接
+
+GitHub仓库链接：
+https://github.com/Lang-Qiu/taobei-app
+
+Pull Request链接：
+[待提交 - 需要向其他仓库或分支提交PR]
+
+项目说明：
+- 实现了完整的用户登录和注册功能
+- 遵循TDD开发模式（需求→接口→测试→实现）
+- 前端：React + TypeScript + Vite + Vitest
+- 后端：Node.js + Express + SQLite + Jest
+- 测试覆盖：前端49个测试用例，后端34个测试用例，全部通过
+- 代码已同步到GitHub仓库
+
+技术栈说明：
+- 使用了课程推荐的技术栈
+- 所有测试代码可执行
+- 业务代码实现了基本登录注册功能并通过所有测试用例
