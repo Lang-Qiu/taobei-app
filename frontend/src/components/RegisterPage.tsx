@@ -4,26 +4,31 @@ import VerificationCodeInput from './VerificationCodeInput';
 import CountdownButton from './CountdownButton';
 import AgreementCheckbox from './AgreementCheckbox';
 import RegisterButton from './RegisterButton';
+import BackToHomeButton from './BackToHomeButton';
 
 interface RegisterPageProps {
   onRegisterSuccess?: (data: { userId: string; token: string }) => void;
   onNavigateToLogin?: () => void;
+  onNavigateToHome?: () => void;
 }
 
 const RegisterPage: React.FC<RegisterPageProps> = ({
   onRegisterSuccess,
-  onNavigateToLogin
+  onNavigateToLogin,
+  onNavigateToHome
 }) => {
   const [phone, setPhone] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isPhoneValid, setIsPhoneValid] = useState(false);
 
   const getApiUrl = (endpoint: string) => {
-    // 在测试环境中使用完整URL，在生产环境中使用相对路径
-    const baseUrl = typeof window !== 'undefined' && window.location ? 
-      window.location.origin : 'http://localhost:3000';
+    // 开发环境下明确指向后端服务器
+    const baseUrl = 'http://localhost:3000';
     return `${baseUrl}${endpoint}`;
   };
 
@@ -57,6 +62,14 @@ const RegisterPage: React.FC<RegisterPageProps> = ({
       setIsLoading(true);
       setError('');
 
+      // 密码验证
+      if (password.length < 6) {
+        throw new Error('密码长度至少6位');
+      }
+      if (password !== confirmPassword) {
+        throw new Error('两次输入的密码不一致');
+      }
+
       const response = await fetch(getApiUrl('/api/auth/register'), {
         method: 'POST',
         headers: {
@@ -65,6 +78,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({
         body: JSON.stringify({
           phoneNumber: phone,
           verificationCode: verificationCode,
+          password: password,
           agreeToTerms: agreeToTerms,
         }),
       });
@@ -94,48 +108,247 @@ const RegisterPage: React.FC<RegisterPageProps> = ({
   };
 
   return (
-    <div className="register-page">
-      <h1>用户注册</h1>
-      
+    <div style={{
+      maxWidth: '400px',
+      margin: '0 auto',
+      padding: '40px 20px',
+      fontFamily: 'Arial, sans-serif'
+    }}>
+      {/* Logo */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        marginBottom: '40px'
+      }}>
+        <div style={{
+          backgroundColor: '#ff9500',
+          color: 'white',
+          padding: '8px 12px',
+          borderRadius: '8px',
+          fontWeight: 'bold',
+          marginRight: '12px'
+        }}>
+          淘宝
+        </div>
+        <span style={{
+          fontSize: '18px',
+          color: '#333'
+        }}>
+          用户注册
+        </span>
+      </div>
+
       {error && (
-        <div className="error-message">
+        <div style={{
+          color: '#ff4d4f',
+          backgroundColor: '#fff2f0',
+          border: '1px solid #ffccc7',
+          borderRadius: '4px',
+          padding: '8px 12px',
+          marginBottom: '20px',
+          fontSize: '14px'
+        }}>
           {error}
         </div>
       )}
-      
-      <PhoneInput
-        value={phone}
-        onChange={setPhone}
-        placeholder="请输入手机号"
-      />
-      
-      <div className="verification-section">
-        <VerificationCodeInput
-          value={verificationCode}
-          onChange={setVerificationCode}
-          placeholder="请输入验证码"
-        />
-        <CountdownButton
-          onClick={handleSendCode}
-          disabled={!phone}
-        />
+
+      {/* 手机号输入 */}
+      <div style={{ marginBottom: '20px' }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          marginBottom: '8px'
+        }}>
+          <span style={{
+            color: '#666',
+            marginRight: '12px',
+            minWidth: '60px'
+          }}>
+            手机号
+          </span>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            border: '1px solid #ddd',
+            borderRadius: '4px',
+            padding: '8px 12px',
+            flex: 1
+          }}>
+            <select style={{
+              border: 'none',
+              outline: 'none',
+              marginRight: '8px',
+              color: '#666'
+            }}>
+              <option>中国大陆 +86</option>
+            </select>
+            <PhoneInput
+              value={phone}
+              onChange={setPhone}
+              onValidationChange={setIsPhoneValid}
+              placeholder="请输入你的手机号码"
+            />
+          </div>
+        </div>
       </div>
-      
+
+      {/* 验证码输入 */}
+      <div style={{ marginBottom: '20px' }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          marginBottom: '8px'
+        }}>
+          <span style={{
+            color: '#666',
+            marginRight: '12px',
+            minWidth: '60px'
+          }}>
+            验证码
+          </span>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            flex: 1
+          }}>
+            <VerificationCodeInput
+              value={verificationCode}
+              onChange={setVerificationCode}
+              placeholder="请输入验证码"
+            />
+            <CountdownButton
+              onClick={handleSendCode}
+              disabled={!isPhoneValid}
+              countdown={0}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* 设置密码 */}
+      <div style={{ marginBottom: '20px' }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          marginBottom: '8px'
+        }}>
+          <span style={{
+            color: '#666',
+            marginRight: '12px',
+            minWidth: '60px'
+          }}>
+            登录密码
+          </span>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            border: '1px solid #ddd',
+            borderRadius: '4px',
+            padding: '8px 12px',
+            flex: 1
+          }}>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="请设置登录密码"
+              style={{
+                border: 'none',
+                outline: 'none',
+                flex: 1,
+                fontSize: '14px',
+                color: '#333'
+              }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* 确认密码 */}
+      <div style={{ marginBottom: '20px' }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          marginBottom: '8px'
+        }}>
+          <span style={{
+            color: '#666',
+            marginRight: '12px',
+            minWidth: '60px'
+          }}>
+            确认密码
+          </span>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            border: '1px solid #ddd',
+            borderRadius: '4px',
+            padding: '8px 12px',
+            flex: 1
+          }}>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="请确认登录密码"
+              style={{
+                border: 'none',
+                outline: 'none',
+                flex: 1,
+                fontSize: '14px',
+                color: '#333'
+              }}
+            />
+          </div>
+        </div>
+      </div>
+
       <AgreementCheckbox
         checked={agreeToTerms}
         onChange={setAgreeToTerms}
       />
-      
+
       <RegisterButton
         onClick={handleRegister}
-        disabled={!phone || !verificationCode || !agreeToTerms}
+        disabled={!isPhoneValid || !verificationCode || !password || !confirmPassword || !agreeToTerms}
         loading={isLoading}
       />
-      
-      <div className="login-link">
-        已有账号？
-        <button onClick={onNavigateToLogin}>立即登录</button>
+
+      {/* 登录链接 */}
+      <div style={{
+        textAlign: 'center',
+        marginTop: '16px'
+      }}>
+        <span style={{ color: '#666', fontSize: '14px' }}>已有账号？</span>
+        <button 
+          onClick={onNavigateToLogin}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: '#ff9500',
+            textDecoration: 'none',
+            fontSize: '14px',
+            cursor: 'pointer',
+            marginLeft: '4px'
+          }}
+        >
+          立即登录
+        </button>
       </div>
+
+      {/* 返回首页按钮 */}
+      {onNavigateToHome && (
+        <div style={{
+          textAlign: 'center',
+          marginTop: '16px'
+        }}>
+          <BackToHomeButton
+            onNavigateToHome={onNavigateToHome}
+            disabled={isLoading}
+          />
+        </div>
+      )}
     </div>
   );
 };

@@ -27,6 +27,7 @@ class DatabaseManager {
       CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY,
         phone TEXT UNIQUE NOT NULL,
+        password TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -124,7 +125,7 @@ class DatabaseManager {
   }
 
   // DB-CreateUser: 创建新用户记录
-  async createUser(phone) {
+  async createUser(phone, password = null) {
     // 生成唯一的用户ID (UUID)
     const userId = this.generateUUID();
     const createdAt = new Date().toISOString();
@@ -138,14 +139,15 @@ class DatabaseManager {
     // 创建新用户记录
     try {
       this.db.run(`
-        INSERT INTO users (id, phone, created_at) 
-        VALUES (?, ?, ?)
-      `, [userId, phone, createdAt]);
+        INSERT INTO users (id, phone, password, created_at) 
+        VALUES (?, ?, ?, ?)
+      `, [userId, phone, password, createdAt]);
       
       // 返回新创建用户的信息
       return {
         id: userId,
         phone: phone,
+        password: password,
         created_at: createdAt
       };
     } catch (error) {

@@ -21,6 +21,19 @@ function generateVerificationCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
+// API状态检查接口 (GET)
+router.get('/status', (req, res) => {
+  res.json({ 
+    status: 'API正常运行', 
+    timestamp: new Date().toISOString(),
+    endpoints: {
+      'POST /send-verification-code': '发送验证码',
+      'POST /register': '用户注册',
+      'POST /login': '用户登录'
+    }
+  });
+});
+
 // 验证码发送接口
 router.post('/send-verification-code', async (req, res) => {
   try {
@@ -74,18 +87,13 @@ router.post('/send-verification-code', async (req, res) => {
 // 登录接口
 router.post('/login', async (req, res) => {
   try {
-    const { phone, phoneNumber, code, verificationCode } = req.body;
+    const { phone, phoneNumber, code, verificationCode, password } = req.body;
     const phoneNum = phone || phoneNumber; // 兼容两种字段名
     const inputCode = code || verificationCode; // 兼容两种字段名
 
     // 手机号格式校验
     if (!phoneNum || !/^1\d{10}$/.test(phoneNum)) {
       return res.status(400).json({ error: '请输入正确的手机号码' });
-    }
-
-    // 验证码格式校验
-    if (!inputCode || !/^\d{6}$/.test(inputCode)) {
-      return res.status(400).json({ error: '请输入正确的验证码' });
     }
 
     // 检查用户是否已注册
@@ -101,15 +109,30 @@ router.post('/login', async (req, res) => {
       return res.status(404).json({ error: '该手机号未注册，请先完成注册' });
     }
 
-    // 验证验证码
-    const result = await database.verifyCode(phoneNum, inputCode);
-    
-    if (!result.valid) {
-      if (result.reason === 'expired') {
-        return res.status(410).json({ error: '验证码已过期' });
-      } else {
-        return res.status(401).json({ error: '验证码错误' });
+    // 支持两种登录方式：密码登录或验证码登录
+    if (password && password.trim() !== '') {
+      // 密码登录
+      if (user.password !== password) {
+        return res.status(401).json({ error: '密码错误' });
       }
+    } else if (inputCode && inputCode.trim() !== '') {
+      // 验证码登录
+      if (!/^\d{6}$/.test(inputCode)) {
+        return res.status(400).json({ error: '请输入正确的验证码' });
+      }
+
+      // 验证验证码
+      const result = await database.verifyCode(phoneNum, inputCode);
+      
+      if (!result.valid) {
+        if (result.reason === 'expired') {
+          return res.status(410).json({ error: '验证码已过期' });
+        } else {
+          return res.status(401).json({ error: '验证码错误' });
+        }
+      }
+    } else {
+      return res.status(400).json({ error: '请输入密码或验证码' });
     }
 
     // 生成JWT token
@@ -133,7 +156,7 @@ router.post('/login', async (req, res) => {
 // 注册接口
 router.post('/register', async (req, res) => {
   try {
-    const { phone, phoneNumber, code, verificationCode, agreeToTerms } = req.body;
+    const { phone, phoneNumber, code, verificationCode, password, agreeToTerms } = req.body;
     const phoneNum = phone || phoneNumber; // 兼容两种字段名
     const inputCode = code || verificationCode; // 兼容两种字段名
 
@@ -145,6 +168,11 @@ router.post('/register', async (req, res) => {
     // 验证码格式校验：必须是6位数字
     if (!inputCode || !/^\d{6}$/.test(inputCode)) {
       return res.status(400).json({ error: '请输入正确的验证码' });
+    }
+
+    // 密码格式校验：至少6位
+    if (!password || password.length < 6) {
+      return res.status(400).json({ error: '密码长度至少6位' });
     }
 
     // 协议同意校验：agreeToTerms必须为true
@@ -174,7 +202,7 @@ router.post('/register', async (req, res) => {
     }
 
     // 创建新用户
-    const newUser = await database.createUser(phoneNum);
+    const newUser = await database.createUser(phoneNum, password);
 
     // 删除验证码（注册成功后清理）
     await database.db.run('DELETE FROM verification_codes WHERE phone = ?', [phoneNum]);

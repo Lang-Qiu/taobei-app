@@ -30,34 +30,64 @@ const AgreementCheckbox: React.FC<AgreementCheckboxProps> = ({
   };
 
   return (
-    <div className="agreement-checkbox">
-      <label className="checkbox-container">
-        <input
-          type="checkbox"
-          checked={checked}
-          onChange={handleChange}
-          disabled={disabled}
-        />
-        <span className="checkmark"></span>
-        <span className="agreement-text">
-          <span>我已阅读并同意</span>
-          <button 
-            type="button" 
-            className="link-button"
-            onClick={handleTermsClick}
-          >
-            《用户协议》
-          </button>
-          <span>和</span>
-          <button 
-            type="button" 
-            className="link-button"
-            onClick={handlePrivacyClick}
-          >
-            《隐私政策》
-          </button>
-        </span>
-      </label>
+    <div style={{
+      display: 'flex',
+      alignItems: 'flex-start',
+      marginTop: '16px',
+      marginBottom: '8px'
+    }}>
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={handleChange}
+        disabled={disabled}
+        style={{
+          marginRight: '8px',
+          marginTop: '2px',
+          accentColor: '#ff9500'
+        }}
+      />
+      <span style={{
+        fontSize: '12px',
+        color: '#666',
+        lineHeight: '1.4'
+      }}>
+        我已阅读并同意
+        <button 
+          type="button" 
+          onClick={handleTermsClick}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: '#ff9500',
+            textDecoration: 'none',
+            fontSize: '12px',
+            cursor: 'pointer',
+            padding: '0',
+            margin: '0 2px'
+          }}
+        >
+          《淘宝平台服务协议》
+        </button>
+        、
+        <button 
+          type="button" 
+          onClick={handlePrivacyClick}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: '#ff9500',
+            textDecoration: 'none',
+            fontSize: '12px',
+            cursor: 'pointer',
+            padding: '0',
+            margin: '0 2px'
+          }}
+        >
+          《隐私权政策》
+        </button>
+        、《芝麻协议》，支付宝及其关联公司隐私政策
+      </span>
     </div>
   );
 };

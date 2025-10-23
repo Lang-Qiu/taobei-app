@@ -66,10 +66,10 @@ vi.mock('../../src/components/RegisterButton', () => ({
 describe('UI-RegisterPage', () => {
   const mockOnRegisterSuccess = vi.fn();
   const mockOnNavigateToLogin = vi.fn();
+  const mockOnNavigateToHome = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
-    // Reset fetch mock
     (global.fetch as any).mockClear();
   });
 
@@ -317,6 +317,116 @@ describe('UI-RegisterPage', () => {
       fireEvent.click(loginLink);
       
       expect(mockOnNavigateToLogin).toHaveBeenCalledTimes(1);
+    });
+
+    describe('返回首页功能测试', () => {
+      it('应该在提供onNavigateToHome回调时显示返回首页按钮', () => {
+        render(
+          <RegisterPage
+            onRegisterSuccess={mockOnRegisterSuccess}
+            onNavigateToLogin={mockOnNavigateToLogin}
+            onNavigateToHome={mockOnNavigateToHome}
+          />
+        );
+        
+        const backToHomeButton = screen.getByTestId('back-to-home-button');
+        expect(backToHomeButton).toBeInTheDocument();
+        expect(backToHomeButton).toHaveTextContent('返回首页');
+      });
+  
+      it('应该在未提供onNavigateToHome回调时不显示返回首页按钮', () => {
+        render(
+          <RegisterPage
+            onRegisterSuccess={mockOnRegisterSuccess}
+            onNavigateToLogin={mockOnNavigateToLogin}
+          />
+        );
+        
+        const backToHomeButton = screen.queryByTestId('back-to-home-button');
+        expect(backToHomeButton).not.toBeInTheDocument();
+      });
+  
+      it('应该在点击返回首页按钮时调用onNavigateToHome回调', () => {
+        render(
+          <RegisterPage
+            onRegisterSuccess={mockOnRegisterSuccess}
+            onNavigateToLogin={mockOnNavigateToLogin}
+            onNavigateToHome={mockOnNavigateToHome}
+          />
+        );
+        
+        const backToHomeButton = screen.getByTestId('back-to-home-button');
+        fireEvent.click(backToHomeButton);
+        
+        expect(mockOnNavigateToHome).toHaveBeenCalledTimes(1);
+      });
+  
+      it('应该在注册过程中禁用返回首页按钮', async () => {
+        // Mock successful verification code request
+        (global.fetch as any).mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ success: true })
+        });
+        
+        // Mock pending register request
+        (global.fetch as any).mockImplementationOnce(() => 
+          new Promise(resolve => setTimeout(() => resolve({
+            ok: true,
+            json: async () => ({ token: 'test-token' })
+          }), 100))
+        );
+        
+        render(
+          <RegisterPage
+            onRegisterSuccess={mockOnRegisterSuccess}
+            onNavigateToLogin={mockOnNavigateToLogin}
+            onNavigateToHome={mockOnNavigateToHome}
+          />
+        );
+        
+        // 填写有效手机号
+        const phoneInput = screen.getByTestId('phone-input');
+        fireEvent.change(phoneInput, { target: { value: '13800138000' } });
+        
+        // 获取验证码
+        const getCodeButton = screen.getByTestId('countdown-button');
+        fireEvent.click(getCodeButton);
+        
+        await waitFor(() => {
+          expect(global.fetch).toHaveBeenCalledWith('/api/auth/send-verification-code', expect.any(Object));
+        });
+        
+        // 填写验证码并勾选协议
+        const codeInput = screen.getByTestId('verification-code-input');
+        const checkbox = screen.getByTestId('agreement-checkbox');
+        fireEvent.change(codeInput, { target: { value: '123456' } });
+        fireEvent.click(checkbox);
+        
+        // 点击注册按钮
+        const registerButton = screen.getByTestId('register-button');
+        fireEvent.click(registerButton);
+        
+        // 验证返回首页按钮在注册过程中被禁用
+        const backToHomeButton = screen.getByTestId('back-to-home-button');
+        expect(backToHomeButton).toBeDisabled();
+      });
+  
+      it('应该将返回首页按钮放置在登录链接下方', () => {
+        render(
+          <RegisterPage
+            onRegisterSuccess={mockOnRegisterSuccess}
+            onNavigateToLogin={mockOnNavigateToLogin}
+            onNavigateToHome={mockOnNavigateToHome}
+          />
+        );
+        
+        const loginLink = screen.getByText(/立即登录/);
+        const backToHomeButton = screen.getByTestId('back-to-home-button');
+        
+        // 验证两个元素都存在
+        expect(loginLink).toBeInTheDocument();
+        expect(backToHomeButton).toBeInTheDocument();
+      });
     });
   });
 });

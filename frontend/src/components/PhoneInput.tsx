@@ -5,13 +5,15 @@ interface PhoneInputProps {
   onChange: (value: string) => void;
   onValidationChange: (isValid: boolean) => void;
   disabled?: boolean;
+  placeholder?: string;
 }
 
 const PhoneInput: React.FC<PhoneInputProps> = ({
   value,
   onChange,
   onValidationChange,
-  disabled = false
+  disabled = false,
+  placeholder = "请输入你的手机号码"
 }) => {
   const [isValid, setIsValid] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -58,7 +60,7 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
         type="text"
         value={value}
         onChange={handleChange}
-        placeholder="请输入你的手机号码"
+        placeholder={placeholder}
         disabled={disabled}
         maxLength={11}
         style={{

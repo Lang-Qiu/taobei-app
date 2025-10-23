@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom';
+import '@testing-library/jest-dom/vitest';
 
 // Mock axios for all tests
 import { vi } from 'vitest';

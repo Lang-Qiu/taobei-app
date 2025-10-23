@@ -4,12 +4,14 @@ interface VerificationCodeInputProps {
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
+  placeholder?: string;
 }
 
 const VerificationCodeInput: React.FC<VerificationCodeInputProps> = ({
   value,
   onChange,
-  disabled = false
+  disabled = false,
+  placeholder = "请输入验证码"
 }) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let newValue = e.target.value;
@@ -31,7 +33,7 @@ const VerificationCodeInput: React.FC<VerificationCodeInputProps> = ({
         type="text"
         value={value}
         onChange={handleChange}
-        placeholder="请输入验证码"
+        placeholder={placeholder}
         disabled={disabled}
         maxLength={6}
         style={{
@@ -40,7 +42,8 @@ const VerificationCodeInput: React.FC<VerificationCodeInputProps> = ({
           borderRadius: '4px',
           width: '100%',
           fontSize: '14px',
-          outline: 'none'
+          outline: 'none',
+          boxSizing: 'border-box'
         }}
       />
     </div>

@@ -71,10 +71,10 @@ const CountdownButton: React.FC<CountdownButtonProps> = ({
         cursor: disabled || isCountingDown ? 'not-allowed' : 'pointer',
         fontSize: '14px',
         whiteSpace: 'nowrap',
-        minWidth: '80px'
+        minWidth: '100px'
       }}
     >
-      {isCountingDown ? `${timeLeft}s` : '获取验证码'}
+      {getButtonText()}
     </button>
   );
 };

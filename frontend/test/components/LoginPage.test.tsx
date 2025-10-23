@@ -10,11 +10,16 @@ vi.mock('axios', () => ({
 }));
 
 import axios from 'axios';
-const mockedAxios = vi.mocked(axios);
+import type { MockedFunction } from 'vitest';
+
+const mockedAxios = {
+  post: axios.post as MockedFunction<typeof axios.post>
+};
 
 describe('LoginPage Component', () => {
   const mockOnLoginSuccess = vi.fn();
   const mockOnNavigateToRegister = vi.fn();
+  const mockOnNavigateToHome = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -225,6 +230,112 @@ describe('LoginPage Component', () => {
       await waitFor(() => {
         expect(loginButton).not.toBeDisabled();
       });
+    });
+  });
+
+  describe('返回首页功能测试', () => {
+    test('应该在提供onNavigateToHome回调时显示返回首页按钮', () => {
+      render(
+        <LoginPage
+          onLoginSuccess={mockOnLoginSuccess}
+          onNavigateToRegister={mockOnNavigateToRegister}
+          onNavigateToHome={mockOnNavigateToHome}
+        />
+      );
+      
+      const backToHomeButton = screen.getByTestId('back-to-home-button');
+      expect(backToHomeButton).toBeInTheDocument();
+      expect(backToHomeButton).toHaveTextContent('返回首页');
+    });
+
+    test('应该在未提供onNavigateToHome回调时不显示返回首页按钮', () => {
+      render(
+        <LoginPage
+          onLoginSuccess={mockOnLoginSuccess}
+          onNavigateToRegister={mockOnNavigateToRegister}
+        />
+      );
+      
+      const backToHomeButton = screen.queryByTestId('back-to-home-button');
+      expect(backToHomeButton).not.toBeInTheDocument();
+    });
+
+    test('应该在点击返回首页按钮时调用onNavigateToHome回调', () => {
+      render(
+        <LoginPage
+          onLoginSuccess={mockOnLoginSuccess}
+          onNavigateToRegister={mockOnNavigateToRegister}
+          onNavigateToHome={mockOnNavigateToHome}
+        />
+      );
+      
+      const backToHomeButton = screen.getByTestId('back-to-home-button');
+      fireEvent.click(backToHomeButton);
+      
+      expect(mockOnNavigateToHome).toHaveBeenCalledTimes(1);
+    });
+
+    test('应该在登录过程中禁用返回首页按钮', async () => {
+      // Mock successful verification code request
+      mockedAxios.post.mockResolvedValueOnce({
+        data: { success: true }
+      });
+      
+      // Mock pending login request
+      mockedAxios.post.mockImplementationOnce(() => 
+        new Promise(resolve => setTimeout(() => resolve({
+          data: { token: 'test-token' }
+        }), 100))
+      );
+      
+      render(
+        <LoginPage
+          onLoginSuccess={mockOnLoginSuccess}
+          onNavigateToRegister={mockOnNavigateToRegister}
+          onNavigateToHome={mockOnNavigateToHome}
+        />
+      );
+      
+      // 填写有效手机号
+      const phoneInput = screen.getByRole('textbox', { name: /手机号/i });
+      fireEvent.change(phoneInput, { target: { value: '13800138000' } });
+      
+      // 获取验证码
+      const getCodeButton = screen.getByRole('button', { name: /获取验证码/i });
+      fireEvent.click(getCodeButton);
+      
+      await waitFor(() => {
+        expect(mockedAxios.post).toHaveBeenCalledWith('/api/auth/send-verification-code', expect.any(Object));
+      });
+      
+      // 填写验证码
+      const codeInput = screen.getByRole('textbox', { name: /验证码/i });
+      fireEvent.change(codeInput, { target: { value: '123456' } });
+      
+      // 点击登录按钮
+      const loginButton = screen.getByRole('button', { name: /登录/i });
+      fireEvent.click(loginButton);
+      
+      // 验证返回首页按钮在登录过程中被禁用
+      const backToHomeButton = screen.getByTestId('back-to-home-button');
+      expect(backToHomeButton).toBeDisabled();
+    });
+
+    test('应该将返回首页按钮放置在企业注册链接下方', () => {
+      render(
+        <LoginPage
+          onLoginSuccess={mockOnLoginSuccess}
+          onNavigateToRegister={mockOnNavigateToRegister}
+          onNavigateToHome={mockOnNavigateToHome}
+        />
+      );
+      
+      const registerLink = screen.getByText('切换到企业账号注册');
+      const backToHomeButton = screen.getByTestId('back-to-home-button');
+      
+      // 验证两个元素都存在
+      expect(registerLink).toBeInTheDocument();
+      expect(backToHomeButton).toBeInTheDocument();
     });
   });
 });

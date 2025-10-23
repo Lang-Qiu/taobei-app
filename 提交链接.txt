@@ -4,7 +4,7 @@ GitHub仓库链接：
 https://github.com/Lang-Qiu/taobei-app
 
 Pull Request链接：
-[待提交 - 需要向其他仓库或分支提交PR]
+https://github.com/cny123222/Taobei-App/pull/1
 
 项目说明：
 - 实现了完整的用户登录和注册功能
